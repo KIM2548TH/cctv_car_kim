@@ -21,10 +21,10 @@
   {% endblock head %}
 </head>
 
-<body class="font-body tracking-wide overflow-x-hidden min-h-screen bg-background-dark text-slate-100">
+<body class="font-body tracking-wide overflow-x-hidden h-screen bg-background-dark text-slate-100 flex flex-col">
   {% include "base/navbar.html" %}
 
-  <main class="w-full min-h-screen bg-background-dark p-4 lg:p-8 flex flex-col items-center justify-start">
+  <main class="w-full flex-1 bg-background-dark flex flex-col min-h-0 relative overflow-hidden">
     {% block body %}
     {% endblock body %}
   </main>

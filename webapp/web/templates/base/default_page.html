@@ -1,8 +1,10 @@
 {% extends "base/base.html" %}
 
 {% block body %}
-<div class="px-3 lg:px-5 py-10 mx-auto">
-  {% block content %}
-  {% endblock content %}
+<div class="w-full flex-1 overflow-y-auto p-4 lg:p-8 flex flex-col items-center justify-start">
+  <div class="w-full max-w-7xl px-3 lg:px-5 py-6 mx-auto">
+    {% block content %}
+    {% endblock content %}
+  </div>
 </div>
 {% endblock body %}
