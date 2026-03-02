@@ -1,7 +1,297 @@
 {% extends "base/default_page.html" %}
 
 {% block content %}
-<h1>Welcome to Flask Starter</h1>
-<p>This is the index page.</p>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 
+<div class="relative flex h-screen w-full flex-col">
+  <!-- Header -->
+  <header>
+    <div class="header-branding">
+      <div class="brand-icon">
+        <span class="material-symbols-outlined brand-icon-symbol">videocam</span>
+      </div>
+      <h2 class="brand-title">SecurView</h2>
+    </div>
+
+    <nav class="flex gap-1">
+      <a class="px-4 py-1.5 text-xs font-medium text-white bg-white/10 rounded transition-colors" href="#">Dashboard</a>
+      <a class="px-4 py-1.5 text-xs font-medium text-slate-400 hover:text-white transition-colors" href="#">Settings</a>
+    </nav>
+
+    <div class="status-section">
+      <span class="status-indicator">
+        <span class="status-dot"></span>
+        System Online
+      </span>
+      <div class="divider"></div>
+      <span id="currentTime">10:42:15 AM</span>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-2 bg-background-dark overflow-hidden flex flex-col">
+    <div class="grid grid-cols-5 grid-rows-4 gap-2 h-full w-full">
+      <!-- Camera 01 -->
+      <div class="camera-tile group">
+        <div class="camera-feed" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBP5773eOYAUS-upBATWBPVGmiFD_bB-jd0z23swEPAiRIUr3BshY9NFhsKKO9FBc4QmxFsyiFupEfdYq8cIl2Z49VzY_MCAI7b2A60Ip31M5PD9O64-XT-91koplS8CXxvqXef_YdADHreqfiJBbW9agr8lkWNYnyENSEsUE9Kaze3Ieu2IHR1jdrwVWoipZajgiyuNhhwY_3zZLsjhTZJniVTbRjOBhth5DTC7TG7fRruyR1w3ygatwQKkDtkfNdY8PpWDR9Wzkwy");'></div>
+        <div class="camera-overlay"></div>
+        <span class="camera-label">CAM-01</span>
+        <span class="camera-name">Front Entrance</span>
+      </div>
+
+      <!-- Camera 02 -->
+      <div class="camera-tile group">
+        <div class="camera-feed" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB617tZ2yht1SwbihDYn08oKL8x-swsgteaKv3APYASXslqDw_rfISDATxmeZrHm05umypuEgONCxj2EjWYAo2AX40MdJikRoFnX1KekzVKofMuPwPiWnzMc_T89jAImLv60vQCBbjH4rCLSRbHjR0seDGObAvq2o7sLIOYS_d2zzsG39kpX8eK0ZpYEntEhros4nAmfAor2zNJLTtTdtolEhX7bNK1aTlij01uVQa2weBRGE1-5q_H6Qsfouosr0AHgylkkL8a6m5N");'></div>
+        <div class="camera-overlay"></div>
+        <span class="camera-label">CAM-02</span>
+        <span class="camera-name">Back Alley</span>
+      </div>
+
+      <!-- Camera 03 -->
+      <div class="camera-tile group">
+        <div class="camera-feed" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD9RDFh0BHd2NInGOioOjnFvSVSWhlIHd6GQJG4bTQSMGO8T_2nJrjGZNdCxhCvhV_9CdsjMPZB2-bawF489f-yMBFMkj6s8z69FwRr5Jx_LEkFkl_RJHO-jj3HlBoF5Pf7on_u77bbcwZgHB4teNw_4r3qG4gS0CqKn7WybholGPrE8O6SvEmItyrnVEwqL28CFNDIr9YqcUg_-OINsArukN5IgMq2fu0HugC63urBSeHjHLwUgFHG2sdzDWP0fSlAuaZcWpx_GzCR");'></div>
+        <div class="camera-overlay"></div>
+        <span class="camera-label">CAM-03</span>
+        <span class="camera-name">Loading Dock</span>
+      </div>
+
+      <!-- Camera 04 -->
+      <div class="camera-tile group">
+        <div class="camera-feed" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD93XoyY3NqJnbG0CfM4Srm--YQZcsD_T0GnN_RvkxsttOZnPASNUWZ6HNvUBOhZLNIK56CyOwe9F9UEg7ns5muHb1GNfWwc_OycwExTPQs0cYXFo62FITb4vnrp_lfcbZF7zB8honWuDLksbdDFD0xCkAndBCqZTl3OEB8qvmhwbT6LxDdhTeO1M_Z13NOFaZnYksjNYsHije5_2t460Up5JhRdOUL_pDbGLUCBMw8lG-jT6SxkHjnOAxHBYZXsgCo_cjoUwR9BCz5");'></div>
+        <div class="camera-overlay"></div>
+        <span class="camera-label">CAM-04</span>
+        <span class="camera-name">Main Lobby</span>
+      </div>
+
+      <!-- Camera 05 -->
+      <div class="camera-tile group">
+        <div class="camera-feed" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDmut8kEZw342qdC381Qn-aKtpL7_HqVFGUmdi9jcRSPtJnJLRajoBWvUoIw-or6q0yRAKL_DrqdRoirDJ3445HGxseipCdsy5L8LzpJCbhfbnUT4rcY5BCBHIZvQaP1JgX4UvxVLP61Ag5AcO_Nl57qoRpyCq2Mn7MwkkitMO56JbV7tEn4AUZ5Rv2JXq7RSLEd0GU7_S2wE-9I7P2_2MXSvLFTE_SDcZIVLk7LtVEh0D5QQCrFgHI3VS-itVHGbZ2tmoGBaZvtbFq");'></div>
+        <div class="camera-overlay"></div>
+        <span class="camera-label">CAM-05</span>
+        <span class="camera-name">Elevator A</span>
+      </div>
+
+      <!-- Camera 06 -->
+      <div class="camera-tile group">
+        <div class="camera-feed" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBb_R21kFEJKtyYnuZ8aDwGCXnKANqZsNLKFt7FA0eZdcgdebyjN7gh2JRAnz-7qe-1zZqcb3yvqEPPxC6N7IXO227Ur0ngBiHtlAOKLi6CzTcrQJKKprbBiuiKRld0huie-ubktzfjcLoEYTmcmf6eYAHO6r9lMVx8Nyu_FhoJg-9HA5b5i0JQKdN7yj2f4agcRVNphVLtrjhz4zZKbvtUQXJYhk-95mygAfGi6rKltALGbmD2Cif5PcWc193wMBT-PIAyBoZzB3n7");'></div>
+        <div class="camera-overlay"></div>
+        <span class="camera-label">CAM-06</span>
+        <span class="camera-name">Parking B2</span>
+      </div>
+
+      <!-- Camera 07 (Offline) -->
+      <div class="camera-tile camera-offline group">
+        <div class="camera-no-feed">
+          <span class="material-symbols-outlined offline-icon">videocam_off</span>
+        </div>
+        <span class="camera-label" style="color: rgb(239, 68, 68, 0.7);">CAM-07</span>
+        <span class="camera-name" style="color: rgb(239, 68, 68);">Server Room</span>
+      </div>
+
+      <!-- Camera 08 -->
+      <div class="camera-tile group">
+        <div class="camera-feed" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBvRnszW3NcS9CwMwn3_DwniBsQhMw09IPYS58RJBScyQLzhypbW0XiEfRtdAtaTjqZkxDS716uICO_hcGpn3vOl-3l0GSQpchF6o2Qg80bHbZ7T5-HyWeYqdmBBBZ77-jVgWXvy1Xpoc7NoruzIxQt9r1hDvKjnwnCpHSVtZcG6qDRlTWsnMLr9iaBURirXeQ9BrYuAuLxS7Q738unqK7AcSJS4RvD-wmgd3EdlLWkwTv15Qu4TInfRXSpIIDPYO0cTDPAeSx15Al5");'></div>
+        <div class="camera-overlay"></div>
+        <div class="camera-status-indicator">
+          <span class="camera-status-pulse"></span>
+          <span class="camera-status-dot"></span>
+        </div>
+        <span class="camera-label">CAM-08</span>
+        <span class="camera-name">North Perimeter</span>
+      </div>
+
+      <!-- Camera 09 -->
+      <div class="camera-tile group">
+        <div class="camera-no-feed">
+          <span class="material-symbols-outlined" style="font-size: 2.25rem; opacity: 0.2; color: rgb(51, 65, 85);">grid_view</span>
+        </div>
+        <span class="camera-label">CAM-09</span>
+        <span class="camera-name">Corridor 2F</span>
+      </div>
+
+      <!-- Camera 10 -->
+      <div class="camera-tile group">
+        <div class="camera-no-feed">
+          <span class="material-symbols-outlined" style="font-size: 2.25rem; opacity: 0.2; color: rgb(51, 65, 85);">grid_view</span>
+        </div>
+        <span class="camera-label">CAM-10</span>
+        <span class="camera-name">Stairwell A</span>
+      </div>
+
+      <!-- Camera 11 -->
+      <div class="camera-tile group">
+        <div class="camera-no-feed">
+          <span class="material-symbols-outlined" style="font-size: 2.25rem; opacity: 0.2; color: rgb(51, 65, 85);">grid_view</span>
+        </div>
+        <span class="camera-label">CAM-11</span>
+        <span class="camera-name">Cafeteria</span>
+      </div>
+
+      <!-- Camera 12 -->
+      <div class="camera-tile group">
+        <div class="camera-no-feed">
+          <span class="material-symbols-outlined" style="font-size: 2.25rem; opacity: 0.2; color: rgb(51, 65, 85);">grid_view</span>
+        </div>
+        <span class="camera-label">CAM-12</span>
+        <span class="camera-name">Meeting Room</span>
+      </div>
+
+      <!-- Camera 13 -->
+      <div class="camera-tile group">
+        <div class="camera-no-feed">
+          <span class="material-symbols-outlined" style="font-size: 2.25rem; opacity: 0.2; color: rgb(51, 65, 85);">grid_view</span>
+        </div>
+        <span class="camera-label">CAM-13</span>
+        <span class="camera-name">Office East</span>
+      </div>
+
+      <!-- Camera 14 -->
+      <div class="camera-tile group">
+        <div class="camera-no-feed">
+          <span class="material-symbols-outlined" style="font-size: 2.25rem; opacity: 0.2; color: rgb(51, 65, 85);">grid_view</span>
+        </div>
+        <span class="camera-label">CAM-14</span>
+        <span class="camera-name">Office West</span>
+      </div>
+
+      <!-- Camera 15 -->
+      <div class="camera-tile group">
+        <div class="camera-no-feed">
+          <span class="material-symbols-outlined" style="font-size: 2.25rem; opacity: 0.2; color: rgb(51, 65, 85);">grid_view</span>
+        </div>
+        <span class="camera-label">CAM-15</span>
+        <span class="camera-name">Parking B1</span>
+      </div>
+
+      <!-- Camera 16 -->
+      <div class="camera-tile group">
+        <div class="camera-no-feed">
+          <span class="material-symbols-outlined" style="font-size: 2.25rem; opacity: 0.2; color: rgb(51, 65, 85);">grid_view</span>
+        </div>
+        <span class="camera-label">CAM-16</span>
+        <span class="camera-name">Roof Access</span>
+      </div>
+
+      <!-- Camera 17 -->
+      <div class="camera-tile group">
+        <div class="camera-no-feed">
+          <span class="material-symbols-outlined" style="font-size: 2.25rem; opacity: 0.2; color: rgb(51, 65, 85);">grid_view</span>
+        </div>
+        <span class="camera-label">CAM-17</span>
+        <span class="camera-name">Side Entrance</span>
+      </div>
+
+      <!-- Camera 18 -->
+      <div class="camera-tile group">
+        <div class="camera-no-feed">
+          <span class="material-symbols-outlined" style="font-size: 2.25rem; opacity: 0.2; color: rgb(51, 65, 85);">grid_view</span>
+        </div>
+        <span class="camera-label">CAM-18</span>
+        <span class="camera-name">Elevator B</span>
+      </div>
+
+      <!-- Camera 19 -->
+      <div class="camera-tile group">
+        <div class="camera-no-feed">
+          <span class="material-symbols-outlined" style="font-size: 2.25rem; opacity: 0.2; color: rgb(51, 65, 85);">grid_view</span>
+        </div>
+        <span class="camera-label">CAM-19</span>
+        <span class="camera-name">Storage 1</span>
+      </div>
+
+      <!-- Camera 20 -->
+      <div class="camera-tile group">
+        <div class="camera-no-feed">
+          <span class="material-symbols-outlined" style="font-size: 2.25rem; opacity: 0.2; color: rgb(51, 65, 85);">grid_view</span>
+        </div>
+        <span class="camera-label">CAM-20</span>
+        <span class="camera-name">Storage 2</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="logs-container">
+      <h3 class="logs-title">Latest 20 Logs</h3>
+      <div class="logs-scroll no-scrollbar mask-gradient-right">
+        <div class="logs-list">
+          <div class="log-item">
+            <span class="log-time">10:41:05</span>
+            <span class="log-camera">CAM-01</span>
+            <span class="log-message">Motion Detected</span>
+          </div>
+          <div class="log-divider"></div>
+
+          <div class="log-item">
+            <span class="log-time">10:40:55</span>
+            <span class="log-camera">CAM-03</span>
+            <span class="log-message">Vehicle Entry</span>
+          </div>
+          <div class="log-divider"></div>
+
+          <div class="log-item">
+            <span class="log-time">10:40:12</span>
+            <span class="log-camera">CAM-07</span>
+            <span class="log-message-error">Signal Lost</span>
+          </div>
+          <div class="log-divider"></div>
+
+          <div class="log-item">
+            <span class="log-time">10:39:45</span>
+            <span class="log-camera">CAM-05</span>
+            <span class="log-message">Person Identified</span>
+          </div>
+          <div class="log-divider"></div>
+
+          <div class="log-item">
+            <span class="log-time">10:38:20</span>
+            <span class="log-camera">CAM-12</span>
+            <span class="log-message">Door Ajar</span>
+          </div>
+          <div class="log-divider"></div>
+
+          <div class="log-item">
+            <span class="log-time">10:37:05</span>
+            <span class="log-camera">CAM-08</span>
+            <span class="log-message">IR Mode Active</span>
+          </div>
+          <div class="log-divider"></div>
+
+          <div class="log-item">
+            <span class="log-time">10:36:15</span>
+            <span class="log-camera">CAM-02</span>
+            <span class="log-message">Motion Detected</span>
+          </div>
+          <div class="log-divider"></div>
+
+          <div class="log-item">
+            <span class="log-time">10:35:50</span>
+            <span class="log-camera">CAM-16</span>
+            <span class="log-message">Access Granted</span>
+          </div>
+          <div class="log-divider"></div>
+
+          <div class="log-item">
+            <span class="log-time">10:34:10</span>
+            <span class="log-camera">CAM-01</span>
+            <span class="log-message">Shift Change</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script>
+  // Update current time
+  function updateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('en-US');
+    document.getElementById('currentTime').textContent = timeString;
+  }
+  
+  updateTime();
+  setInterval(updateTime, 1000);
+</script>
 {% endblock %}
