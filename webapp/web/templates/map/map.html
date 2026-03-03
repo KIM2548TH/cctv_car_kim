@@ -3,6 +3,26 @@
 {% block head %}
 <link rel="stylesheet" href="{{ 'css/parking-map.css' | static_url }}">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  .parking-availability-label {
+    background: #3b82f6;
+    border: 2px solid #0f172a;
+    border-radius: 999px;
+    color: white;
+    font-weight: 800;
+    font-size: 11px;
+    padding: 2px 6px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
+    pointer-events: none;
+    text-align: center;
+    min-width: 20px;
+  }
+
+  .leaflet-tooltip-top:before {
+    border-top-color: #3b82f6;
+  }
+</style>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 {% endblock head %}
 
@@ -173,6 +193,14 @@
     const icon = index === 0 ? parkingIcon : smallParkingIcon;
     const marker = L.marker([lot.lat, lot.lng], { icon: icon }).addTo(map);
     marker.bindPopup(createPopupContent(lot), { maxWidth: 300 });
+    
+    // Add permanent numeric label for available slots
+    marker.bindTooltip(lot.capacity.toString(), {
+      permanent: true,
+      direction: 'top',
+      className: 'parking-availability-label',
+      offset: index === 0 ? [0, -32] : [0, -12] // Adjust offset based on marker size
+    }).openTooltip();
   });
 
   // Zoom to university function
