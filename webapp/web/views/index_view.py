@@ -29,6 +29,22 @@ def index():
         anomaly_logs=anomaly_logs
     )
 
+@module.route("/anomaly/<event_id>")
+@login_required
+def anomaly_detail(event_id):
+    from flask import abort
+    event = models.AnomalyEvent.objects(id=event_id).first()
+    if not event:
+        abort(404, description="Anomaly event not found")
+        
+    camera = models.Camera.objects(camera_id=event.camera_id).first()
+    
+    return render_template(
+        "/index/anomaly_detail.html",
+        event=event,
+        camera=camera
+    )
+
 
 @module.route("/api/cameras/assign", methods=["POST"])
 @login_required

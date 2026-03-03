@@ -142,9 +142,10 @@
         <span class="log-time">{{ log.timestamp.strftime('%H:%M:%S') }}</span>
         <span class="log-camera">{{ log.camera_id }}</span>
         <span class="log-message text-red-400 capitalize">{{ log.event_type.replace('_', ' ') }}</span>
-        {% if log.media_video_url %}
-        <a href="{{ url_for('camera.live_feed', camera_id=log.camera_id) }}" target="_blank"
-          class="ml-2 text-[10px] text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity">
+        {% if log.media_video_url or log.media_snapshot_url %}
+        <a href="{{ url_for('index.anomaly_detail', event_id=log.id) }}"
+          class="ml-2 text-[10px] text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity"
+          title="View Details">
           <span class="material-symbols-outlined text-sm align-middle">visibility</span>
         </a>
         {% endif %}

@@ -1,0 +1,158 @@
+{% extends "base/base.html" %}
+
+{% block title %}Anomaly Event Detail - {{ config.APP_TITLE }}{% endblock %}
+
+{% block head %}
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+<style>
+    .font-display {
+        font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .bg-surface {
+        background-color: #161b22;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="flex flex-col min-h-screen w-full bg-[#0b1116] font-display">
+
+    <!-- Header -->
+    <header
+        class="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#0b1116] shrink-0 sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+            <a href="javascript:history.back()"
+                class="size-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-300 transition-colors border border-white/5">
+                <span class="material-symbols-outlined text-xl">arrow_back</span>
+            </a>
+            <div>
+                <h1 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                    <span class="material-symbols-outlined text-red-500">warning</span>
+                    Anomaly Event Details
+                </h1>
+                <div class="text-xs font-medium text-slate-400 mt-1">
+                    Event ID: <span class="font-mono">{{ event.id }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <span
+                class="px-3 py-1.5 rounded-lg border {% if event.is_reviewed %}border-emerald-500/30 bg-emerald-500/10 text-emerald-400{% else %}border-orange-500/30 bg-orange-500/10 text-orange-400{% endif %} flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider">
+                <span class="material-symbols-outlined text-[16px]">{% if event.is_reviewed %}check_circle{% else
+                    %}pending_actions{% endif %}</span>
+                {% if event.is_reviewed %}Reviewed{% else %}Pending Review{% endif %}
+            </span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-5xl w-full mx-auto p-4 lg:p-8 flex flex-col gap-6">
+
+        <!-- Snapshot Display -->
+        <div class="w-full mx-auto bg-surface border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+            <div class="w-full h-[35vh] min-h-[250px] max-h-[400px] bg-black relative flex items-center justify-center">
+                {% if event.media_snapshot_url %}
+                <img src="{{ event.media_snapshot_url }}" alt="Anomaly Snapshot" class="w-full h-full object-contain" />
+                {% else %}
+                <div class="flex flex-col items-center justify-center text-slate-500">
+                    <span class="material-symbols-outlined text-6xl mb-4 opacity-50">image_not_supported</span>
+                    <p>No snapshot available for this event.</p>
+                </div>
+                {% endif %}
+
+                <!-- Overlay Data -->
+                <div class="absolute top-4 left-4 flex gap-2">
+                    <div
+                        class="bg-red-500/90 text-white px-3 py-1.5 rounded-lg text-sm font-bold border border-red-500 shadow-lg backdrop-blur-md flex items-center gap-1.5 capitalize">
+                        <span class="material-symbols-outlined text-[18px]">gavel</span>
+                        {{ event.event_type.replace('_', ' ') }}
+                    </div>
+                </div>
+
+                <div class="absolute bottom-4 right-4 flex gap-2">
+                    <div
+                        class="bg-black/70 text-slate-200 px-3 py-1.5 rounded-lg text-sm font-mono border border-white/10 shadow-lg backdrop-blur-md flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[18px]">schedule</span>
+                        {{ event.timestamp.strftime('%d %b %Y, %H:%M:%S') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- Information Card -->
+            <div class="bg-surface border border-white/10 rounded-2xl p-6 flex flex-col gap-5">
+                <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">info</span>
+                    Detection Context
+                </h2>
+
+                <div class="flex flex-col gap-4">
+                    <div class="flex justify-between items-center py-2 border-b border-white/5">
+                        <span class="text-slate-400 text-sm">Source Camera</span>
+                        <div class="flex items-center gap-2">
+                            {% if camera %}
+                            <span class="text-white font-medium">{{ camera.name }}</span>
+                            <span class="text-xs font-mono text-slate-500 bg-white/5 px-2 py-0.5 rounded">{{
+                                camera.camera_id }}</span>
+                            {% else %}
+                            <span class="text-slate-300 font-mono">{{ event.camera_id }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center py-2 border-b border-white/5">
+                        <span class="text-slate-400 text-sm">AI Confidence</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl font-bold text-emerald-400">{{ '%0.1f' | format(event.confidence * 100)
+                                }}%</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center py-2 border-b border-white/5">
+                        <span class="text-slate-400 text-sm">Event Type</span>
+                        <span class="text-red-400 font-medium capitalize">{{ event.event_type.replace('_', ' ')
+                            }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Card -->
+            <div class="bg-surface border border-white/10 rounded-2xl p-6 flex flex-col gap-5">
+                <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">build</span>
+                    Actions
+                </h2>
+
+                <div class="flex flex-col gap-3 h-full justify-center">
+                    {% if event.media_video_url %}
+                    <a href="{{ event.media_video_url }}" target="_blank"
+                        class="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20">
+                        <span class="material-symbols-outlined">play_circle</span>
+                        View Event Video Clip
+                    </a>
+                    {% else %}
+                    <button disabled
+                        class="w-full py-3 px-4 rounded-xl bg-white/5 text-slate-500 font-medium flex items-center justify-center gap-2 cursor-not-allowed">
+                        <span class="material-symbols-outlined">videocam_off</span>
+                        No Video Available
+                    </button>
+                    {% endif %}
+
+                    <a href="{{ url_for('camera.live_feed', camera_id=event.camera_id) }}"
+                        class="w-full py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-white font-medium transition-colors flex items-center justify-center gap-2 border border-white/5">
+                        <span class="material-symbols-outlined">videocam</span>
+                        View Live Camera Feed
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+{% endblock %}
