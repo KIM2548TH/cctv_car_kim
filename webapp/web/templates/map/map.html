@@ -100,6 +100,7 @@
 
   // Process data to match the map's expected structure
   const parkingLots = db_parking_lots.map(lot => ({
+    camera_id: lot.camera_id,
     name: lot.name,
     location: lot.ip_address,
     lat: lot.lat,
@@ -158,10 +159,10 @@
           <div style="background-color: rgba(113, 113, 122, 0.3); border-radius: 9999px; overflow: hidden; height: 6px; margin-bottom: 16px;">
             <div style="height: 100%; width: ${lot.capacityPercent}%; background-color: ${lot.capacityPercent >= 85 ? '#ef4444' : lot.capacityPercent >= 50 ? '#fb923c' : '#22c55e'};"></div>
           </div>
-          <button style="width: 100%; background-color: #3b82f6; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <a href="/camera/${lot.camera_id}" target="_blank" style="width: 100%; background-color: #3b82f6; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#2563eb'" onmouseout="this.style.backgroundColor='#3b82f6'">
             <span class="material-symbols-outlined" style="font-size: 18px;">videocam</span>
             View Live Feed
-          </button>
+          </a>
         </div>
       </div>
     `;

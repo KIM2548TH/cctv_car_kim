@@ -21,6 +21,7 @@ def map_view():
     for cam in cameras:
         pa = parking_area_map.get(cam.camera_id)
         markers.append({
+            "camera_id": cam.camera_id,
             "name": cam.name,
             "ip_address": cam.ip_address or "Unknown",
             "lat": cam.latitude,

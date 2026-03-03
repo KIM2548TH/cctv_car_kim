@@ -36,6 +36,15 @@
         </div>
         <span class="camera-label">CAM-{{ slot_id }}</span>
         <span class="camera-name" id="name-lbl-{{ i }}">{{ cam.name if cam else 'Unassigned Slot' }}</span>
+
+        {% if cam %}
+        <!-- Direct Live Feed Link -->
+        <a href="{{ url_for('camera.live_feed', camera_id=cam.camera_id) }}" target="_blank"
+          class="absolute top-2 right-2 z-20 bg-emerald-500/80 hover:bg-emerald-500 text-white rounded p-1.5 flex items-center justify-center transition-colors shadow-lg border border-emerald-400/50 backdrop-blur-sm opacity-0 group-hover:opacity-100"
+          onclick="event.stopPropagation();" title="Open Live Feed">
+          <span class="material-symbols-outlined text-sm">open_in_new</span>
+        </a>
+        {% endif %}
       </div>
       {% endfor %}
     </div>
