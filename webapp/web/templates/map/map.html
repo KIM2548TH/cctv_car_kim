@@ -91,7 +91,13 @@
   const PSU_LAT = 7.010317;
   const PSU_LNG = 100.496555;
 
-  let map = L.map('map').setView([PSU_LAT, PSU_LNG], 18);
+  // Retrieve latitude and longitude from URL query parameters if they exist
+  const urlParams = new URLSearchParams(window.location.search);
+  const startLat = urlParams.has('lat') ? parseFloat(urlParams.get('lat')) : PSU_LAT;
+  const startLng = urlParams.has('lng') ? parseFloat(urlParams.get('lng')) : PSU_LNG;
+  const startZoom = urlParams.has('lat') && urlParams.has('lng') ? 19 : 18;
+
+  let map = L.map('map').setView([startLat, startLng], startZoom);
 
   // Add OpenStreetMap tiles
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -193,7 +199,7 @@
     const icon = index === 0 ? parkingIcon : smallParkingIcon;
     const marker = L.marker([lot.lat, lot.lng], { icon: icon }).addTo(map);
     marker.bindPopup(createPopupContent(lot), { maxWidth: 300 });
-    
+
     // Add permanent numeric label for available slots
     marker.bindTooltip(lot.capacity.toString(), {
       permanent: true,

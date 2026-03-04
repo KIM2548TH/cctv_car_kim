@@ -67,7 +67,7 @@
                 LIVE STREAM
             </div>
 
-            <a href="{{ url_for('map.map_view') }}"
+            <a href="{{ url_for('map.map_view', lat=camera.latitude, lng=camera.longitude) if camera.latitude and camera.longitude else url_for('map.map_view') }}"
                 class="flex items-center gap-2 px-4 py-2 bg-surface hover:bg-[#1c222b] border border-white/10 text-white rounded-lg text-sm font-medium transition-all">
                 <span class="material-symbols-outlined text-[18px]">map</span>
                 Back to Map
