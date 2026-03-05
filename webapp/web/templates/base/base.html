@@ -24,6 +24,25 @@
 <body class="font-body tracking-wide overflow-x-hidden h-screen bg-background-dark text-slate-100 flex flex-col">
   {% include "base/navbar.html" %}
 
+  <!-- Page Loading Overlay -->
+  <div id="page-loading-overlay"
+    style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(10,10,20,0.82); backdrop-filter:blur(6px); flex-direction:column; align-items:center; justify-content:center; gap:16px;">
+    <div
+      style="width:52px; height:52px; border-radius:50%; border:3px solid rgba(255,255,255,0.1); border-top-color:#6366f1; animation:spin 0.8s linear infinite;">
+    </div>
+    <div style="text-align:center;">
+      <p style="color:#e2e8f0; font-size:15px; font-weight:600; margin:0;" id="loading-title">กำลังโหลดข้อมูล...</p>
+      <p style="color:#64748b; font-size:12px; margin:4px 0 0;" id="loading-sub">กรุณารอสักครู่</p>
+    </div>
+  </div>
+  <style>
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+
   <main class="w-full flex-1 bg-background-dark flex flex-col min-h-0 relative overflow-hidden">
     {% block body %}
     {% endblock body %}
@@ -31,6 +50,46 @@
 
   {% block js %}
   {% endblock js %}
+
+  <script>
+    (function () {
+      const overlay = document.getElementById('page-loading-overlay');
+      const loadingTitle = document.getElementById('loading-title');
+      const loadingSub = document.getElementById('loading-sub');
+
+      const pageLabels = {
+        '/map': { title: 'กำลังโหลดแผนที่...', sub: 'ดึงข้อมูลที่จอดรถจากกล้องทุกตัว' },
+        '/log': { title: 'กำลังโหลดประวัติ...', sub: 'ดึง Event ย้อนหลังจากกล้องทุกตัว' },
+        '/camera': { title: 'กำลังโหลดกล้อง...', sub: 'ดึงข้อมูลสดจากกล้อง' },
+      };
+
+      function showOverlay(href) {
+        let label = { title: 'กำลังโหลด...', sub: 'กรุณารอสักครู่' };
+        for (const [key, val] of Object.entries(pageLabels)) {
+          if (href && href.includes(key)) { label = val; break; }
+        }
+        loadingTitle.textContent = label.title;
+        loadingSub.textContent = label.sub;
+        overlay.style.display = 'flex';
+      }
+
+      document.addEventListener('click', function (e) {
+        const link = e.target.closest('a[href]');
+        if (!link) return;
+        const href = link.getAttribute('href');
+        // Skip external links, anchor links, and non-navigation links
+        if (!href || href.startsWith('#') || href.startsWith('mailto') || href.startsWith('http') || link.target === '_blank') return;
+        // Skip API links
+        if (href.startsWith('/api/')) return;
+        showOverlay(href);
+      });
+
+      // Hide overlay if browser navigates back
+      window.addEventListener('pageshow', function (e) {
+        overlay.style.display = 'none';
+      });
+    })();
+  </script>
 </body>
 
 </html>

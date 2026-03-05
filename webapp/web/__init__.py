@@ -6,6 +6,7 @@ from .. import models
 from .utils.error_handling import init_error_handling
 from .utils import acl
 from dotenv import load_dotenv
+import json
 
 
 def load_config(app):
@@ -35,6 +36,7 @@ def create_app():
     acl.init_acl(app)
 
     init_error_handling(app)
+    
     return app
 
 

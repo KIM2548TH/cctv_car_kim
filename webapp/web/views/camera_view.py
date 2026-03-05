@@ -9,10 +9,16 @@ module = Blueprint("camera", __name__)
 @login_required
 def live_feed(camera_id):
     """Display a dedicated live feed page for a specific camera"""
+    from webapp.services.sync_service import sync_parking_area_for_camera, sync_anomaly_events_for_camera
+    
     cam = models.Camera.objects(camera_id=camera_id).first()
     
     if not cam:
         abort(404, description="Camera not found")
+        
+    # Trigger on-demand sync for this specific camera
+    sync_parking_area_for_camera(cam)
+    sync_anomaly_events_for_camera(cam)
         
     # Attempt to fetch associated parking area for stats
     parking_area = models.ParkingArea.objects(camera_id=camera_id).first()

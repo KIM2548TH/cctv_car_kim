@@ -9,8 +9,14 @@ module = Blueprint("map", __name__)
 @login_required
 def map_view():
     """Display the university parking map with real camera locations"""
+    from webapp.services.sync_service import sync_parking_area_for_camera
+    
     # Fetch all cameras that have GPS coordinates
     cameras = models.Camera.objects(latitude__ne=None, longitude__ne=None).order_by("name")
+    
+    # Trigger on-demand sync for parking areas across active cameras
+    for cam in cameras:
+        sync_parking_area_for_camera(cam)
     
     # Also fetch parking areas to possibly link info (like slots)
     parking_areas = models.ParkingArea.objects()

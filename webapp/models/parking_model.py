@@ -8,7 +8,7 @@ class ParkingArea(me.Document):
     ถูกออกแบบให้เบาและรวดเร็วสำหรับการ Query เพื่อไปพล็อตสรุปลงบนแอปแผนที่
     """
     # ชื่อหรือรหัสโซนลานจอด (เช่น "Zone A", "Parking Front")
-    name = me.StringField(required=True, unique=True)
+    name = me.StringField(required=True)
     
     # รายละเอียดพื้นที่เพิ่มเติม (เอาไว้แสดงผลบนเว็บ)
     description = me.StringField()
@@ -36,7 +36,8 @@ class ParkingArea(me.Document):
     meta = {
         "collection": "parking_areas",
         "indexes": [
+            # camera_id เป็น unique key — 1 กล้องมีได้แค่ 1 parking zone
+            {"fields": ["camera_id"], "unique": True},
             "name",
-            "camera_id"
         ]
     }
