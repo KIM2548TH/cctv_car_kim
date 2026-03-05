@@ -173,29 +173,15 @@
 <!-- Footer -->
 <footer>
   <div class="logs-container">
-    <h3 class="logs-title">Latest 20 Logs</h3>
-    <div class="logs-scroll no-scrollbar mask-gradient-right">
-      {% for log in anomaly_logs %}
-      <div class="log-item group">
-        <span class="log-time">{{ log.timestamp.strftime('%H:%M:%S') }}</span>
-        <span class="log-camera">{{ log.camera_id }}</span>
-        <span class="log-message text-red-400 capitalize">{{ log.event_type.replace('_', ' ') }}</span>
-        {% if log.media_video_url or log.media_snapshot_url %}
-        <a href="{{ url_for('index.anomaly_detail', event_id=log.id) }}"
-          class="ml-2 text-[10px] text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity"
-          title="View Details">
-          <span class="material-symbols-outlined text-sm align-middle">visibility</span>
-        </a>
-        {% endif %}
+    <h3 class="logs-title shrink-0">Latest 20 Logs</h3>
+    <div class="logs-scroll no-scrollbar mask-gradient-right flex-1 overflow-hidden relative"
+      id="auto-scroll-container">
+      <div class="flex items-center gap-3 w-max pr-8 h-full" hx-get="/api/components/dashboard_logs"
+        hx-trigger="load, every 15s">
+        <!-- The component will be loaded here automatically -->
+        {% include "components/dashboard_logs.html" %}
       </div>
-      {% if not loop.last %}<div class="log-divider"></div>{% endif %}
-      {% else %}
-      <div class="flex items-center justify-center p-4 text-slate-500 text-xs">
-        No recent anomalies recorded
-      </div>
-      {% endfor %}
     </div>
-  </div>
   </div>
 </footer>
 </div>
@@ -247,6 +233,38 @@
   document.addEventListener('DOMContentLoaded', () => {
     const savedMode = localStorage.getItem('cctv_grid_mode');
     setGridMode(savedMode ? parseInt(savedMode) : 20); // Default to 20
+  });
+
+  // ----------- Auto-Scrolling Footer Logistics -----------
+  let marqueeActive = true;
+  document.addEventListener('DOMContentLoaded', () => {
+    const scroller = document.getElementById('auto-scroll-container');
+    if (!scroller) return;
+
+    // Pause on hover
+    scroller.addEventListener('mouseenter', () => marqueeActive = false);
+    scroller.addEventListener('mouseleave', () => marqueeActive = true);
+
+    let scrollDirection = 1;
+    function animateMarquee() {
+      if (marqueeActive && scroller.scrollWidth > scroller.clientWidth) {
+        const maxScroll = scroller.scrollWidth - scroller.clientWidth;
+
+        // Change direction at the edges
+        if (scroller.scrollLeft >= maxScroll - 1) {
+          scrollDirection = -1;
+        } else if (scroller.scrollLeft <= 0) {
+          scrollDirection = 1;
+        }
+
+        // Move by 1 pixel per frame (approx 60px per second)
+        scroller.scrollLeft += scrollDirection * 1;
+      }
+      requestAnimationFrame(animateMarquee);
+    }
+
+    // Start animation loop
+    requestAnimationFrame(animateMarquee);
   });
   // ---------------------------------------
 

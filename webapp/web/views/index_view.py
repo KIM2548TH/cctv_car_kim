@@ -20,7 +20,7 @@ def index():
             assigned_cameras[cam.dashboard_slot] = cam
         else:
             unassigned_cameras.append(cam)
-    # Fetch the 20 most recent anomaly events
+    # Fetch the 20 most recent anomaly events for initial render
     anomaly_logs = models.AnomalyEvent.objects().order_by("-timestamp").limit(20)
             
     return render_template(
@@ -30,19 +30,67 @@ def index():
         anomaly_logs=anomaly_logs
     )
 
+@module.route("/api/components/dashboard_logs")
+@login_required
+def api_dashboard_logs():
+    """HTMX endpoint to poll the latest 20 anomaly logs for the dashboard footer"""
+    anomaly_logs = models.AnomalyEvent.objects().order_by("-timestamp").limit(20)
+    return render_template(
+        "/components/dashboard_logs.html", 
+        anomaly_logs=anomaly_logs
+    )
+
 @module.route("/anomaly/<event_id>")
 @login_required
 def anomaly_detail(event_id):
     from flask import abort
+    from urllib.parse import urlparse
+
     event = models.AnomalyEvent.objects(id=event_id).first()
     if not event:
         abort(404, description="Anomaly event not found")
-        
+
     camera = models.Camera.objects(camera_id=event.camera_id).first()
-    
+
+    # แปลง Windows path → HTTP URL (เหมือนที่ log_view ทำ)
+    base_url = ""
+    if camera and camera.stream_url:
+        parsed = urlparse(camera.stream_url)
+        if parsed.netloc:
+            base_url = f"{parsed.scheme}://{parsed.netloc}"
+
+    def _win_path_to_url(win_path):
+        if not win_path:
+            return ""
+        if win_path.startswith("http://") or win_path.startswith("https://"):
+            return win_path
+        if not base_url:
+            return ""
+        norm = win_path.replace("\\", "/")
+        if len(norm) > 2 and norm[1] == ":":
+            norm = norm[2:].lstrip("/")
+        if norm.lower().startswith("locvideo/"):
+            return f"{base_url}/{norm}"
+        if norm.lower().startswith("smart_parking_violations/"):
+            rest = norm[len("smart_parking_violations/"):]
+            return f"{base_url}/violations/{rest}"
+        return f"{base_url}/{norm}"
+
+    event_data = {
+        "id": str(event.id),
+        "camera_id": event.camera_id,
+        "timestamp": event.timestamp,
+        "event_type": event.event_type,
+        "confidence": event.confidence,
+        "is_reviewed": event.is_reviewed,
+        "media_seek_time_seconds": event.media_seek_time_seconds,
+        "media_snapshot_url": _win_path_to_url(event.media_snapshot_url),
+        "media_video_url": _win_path_to_url(event.media_video_url),
+    }
+
     return render_template(
         "/index/anomaly_detail.html",
-        event=event,
+        event=event_data,
         camera=camera
     )
 
@@ -98,7 +146,61 @@ def log_view():
         )
         
     # Order by newest first
-    events = query.order_by("-timestamp")
+    events = list(query.order_by("-timestamp"))
+    
+    # แปลง Windows local path → HTTP URL
+    # C++ server เก็บเป็น path เช่น "C:/locvideo/20260305/052511.webm"
+    # แต่เราต้องโหลดผ่าน HTTP endpoint ของกล้องแต่ละตัวแทน
+    from urllib.parse import urlparse
+    
+    # สร้าง map camera_id → base_url ของกล้อง
+    cameras_all = models.Camera.objects()
+    camera_base_urls = {}
+    for cam in cameras_all:
+        if cam.stream_url:
+            parsed = urlparse(cam.stream_url)
+            if parsed.netloc:
+                camera_base_urls[cam.camera_id] = f"{parsed.scheme}://{parsed.netloc}"
+    
+    def _win_path_to_url(win_path: str, base_url: str) -> str:
+        """แปลง Windows path เป็น HTTP URL
+        C:/locvideo/20260305/file.webm   → base_url/locvideo/20260305/file.webm
+        C:/smart_parking_violations/...  → base_url/violations/...
+        ถ้าเป็น HTTP URL อยู่แล้วให้คืนเหมือนเดิม
+        """
+        if not win_path:
+            return ""
+        if win_path.startswith("http://") or win_path.startswith("https://"):
+            return win_path
+        # Normalize backslash to forward slash
+        norm = win_path.replace("\\", "/")
+        # Strip drive letter e.g. "C:/"
+        if len(norm) > 2 and norm[1] == ":":
+            norm = norm[2:].lstrip("/")
+        # Map folder prefixes
+        if norm.lower().startswith("locvideo/"):
+            return f"{base_url}/{norm}"
+        if norm.lower().startswith("smart_parking_violations/"):
+            rest = norm[len("smart_parking_violations/"):]
+            return f"{base_url}/violations/{rest}"
+        # Fallback: ต่อท้าย base URL เลย
+        return f"{base_url}/{norm}"
+    
+    # แปลง URL ใน event แต่ละตัว — สร้าง dict แทน object เพื่อไม่ให้แก้ DB
+    enriched_events = []
+    for ev in events:
+        base_url = camera_base_urls.get(ev.camera_id, "")
+        enriched_events.append({
+            "id": str(ev.id),
+            "camera_id": ev.camera_id,
+            "timestamp": ev.timestamp,
+            "event_type": ev.event_type,
+            "confidence": ev.confidence,
+            "is_reviewed": ev.is_reviewed,
+            "media_seek_time_seconds": ev.media_seek_time_seconds,
+            "media_snapshot_url": _win_path_to_url(ev.media_snapshot_url, base_url) if base_url else ev.media_snapshot_url,
+            "media_video_url": _win_path_to_url(ev.media_video_url, base_url) if base_url else ev.media_video_url,
+        })
     
     # Calculate previous and next dates for navigation
     prev_date = (selected_date - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
@@ -109,7 +211,7 @@ def log_view():
     
     return render_template(
         "/index/log.html",
-        events=events,
+        events=enriched_events,
         selected_date=selected_date_str,
         selected_date_display=selected_date_display,
         prev_date=prev_date,

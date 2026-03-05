@@ -85,144 +85,207 @@
 </div>
 
 <script>
-  // Initialize Leaflet Map
-  // Prince of Songkla University - Kho Hong Campus coordinates
-  // Address: 15 Kanchanawanit Rd, Kho Hong, Hat Yai, Songkhla 90110
   const PSU_LAT = 7.010317;
   const PSU_LNG = 100.496555;
 
-  // Retrieve latitude and longitude from URL query parameters if they exist
   const urlParams = new URLSearchParams(window.location.search);
   const startLat = urlParams.has('lat') ? parseFloat(urlParams.get('lat')) : PSU_LAT;
   const startLng = urlParams.has('lng') ? parseFloat(urlParams.get('lng')) : PSU_LNG;
   const startZoom = urlParams.has('lat') && urlParams.has('lng') ? 19 : 18;
 
   let map = L.map('map').setView([startLat, startLng], startZoom);
-
-  // Add OpenStreetMap tiles
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors',
-    maxZoom: 21,
-    minZoom: 15
+    maxZoom: 21, minZoom: 15
   }).addTo(map);
 
-  // Custom parking marker icon
-  const parkingIcon = L.divIcon({
-    html: `<div class="parking-marker"><span class="material-symbols-outlined text-white text-2xl relative z-10">local_parking</span></div>`,
-    iconSize: [56, 56],
-    iconAnchor: [28, 28],
-    popupAnchor: [0, -28]
-  });
-
-  const smallParkingIcon = L.divIcon({
-    html: `<div class="parking-marker-small"></div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-    popupAnchor: [0, -12]
-  });
-
-  // Real parking lots data from database
-  const db_parking_lots = {{ parking_lots | tojson | safe }};
-
-  // Process data to match the map's expected structure
-  const parkingLots = db_parking_lots.map(lot => ({
-    camera_id: lot.camera_id,
-    name: lot.name,
-    location: lot.ip_address,
-    lat: lot.lat,
-    lng: lot.lng,
-    capacity: lot.available_slots !== null ? lot.available_slots : 0,
-    maxCapacity: lot.total_slots !== null ? lot.total_slots : 0,
-    status: lot.status,
-    status_label: lot.status.charAt(0).toUpperCase() + lot.status.slice(1),
-    capacityPercent: lot.capacityPercent
-  }));
-
-  // Fallback if no real data exists (to keep the map from being empty during demo)
-  if (parkingLots.length === 0) {
-    parkingLots.push({
-      name: 'No Camera Detected',
-      location: 'Please add cameras with GPS in settings',
-      lat: PSU_LAT,
-      lng: PSU_LNG,
-      capacity: 0,
-      maxCapacity: 0,
-      status: 'full',
-      status_label: 'Offline',
-      capacityPercent: 100
+  // ---- Icon definitions ----
+  function makeIcon(color, large) {
+    const size = large ? 56 : 44;
+    const icons = {
+      loading: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#52525b;border:3px solid #71717a;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.4);animation:pulse 1.5s infinite;">
+                  <span class="material-symbols-outlined text-white" style="font-size:${large ? 24 : 18}px">sync</span></div>`,
+      online: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#1d4ed8;border:3px solid #3b82f6;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(59,130,246,.4);">
+                  <span class="material-symbols-outlined text-white" style="font-size:${large ? 24 : 18}px">local_parking</span></div>`,
+      offline: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#7f1d1d;border:3px solid #ef4444;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(239,68,68,.4);">
+                  <span class="material-symbols-outlined text-white" style="font-size:${large ? 24 : 18}px">wifi_off</span></div>`,
+    };
+    return (state) => L.divIcon({
+      html: icons[state] || icons.offline,
+      iconSize: [size, size], iconAnchor: [size / 2, size / 2], popupAnchor: [0, -(size / 2)]
     });
   }
 
-  // Create popup content
-  function createPopupContent(lot) {
-    const statusColors = {
-      'open': '#22c55e',
-      'filling': '#fb923c',
-      'full': '#ef4444'
-    };
-    const statusBgColors = {
-      'open': 'rgba(34, 197, 94, 0.1)',
-      'filling': 'rgba(251, 146, 60, 0.1)',
-      'full': 'rgba(239, 68, 68, 0.1)'
-    };
+  // ---- Database initial data ----
+  const db_parking_lots = {{ parking_lots | tojson | safe }};
+
+  // Map: camera_id → { marker, tooltip, lot }
+  const markerMap = {};
+
+  function capacityLabel(available, total) {
+    if (available === null || available === undefined) return '?';
+    return available.toString();
+  }
+
+  function createPopupContent(lot, isOnline, fresh) {
+    const avail = fresh?.available_slots ?? lot.available_slots;
+    const total = fresh?.total_slots ?? lot.total_slots;
+    const pct = fresh?.capacityPercent ?? lot.capacityPercent;
+    const statusLabel = !isOnline ? 'Offline' : pct >= 85 ? 'Full' : pct >= 50 ? 'Filling' : 'Open';
+    const statusColor = !isOnline ? '#ef4444' : pct >= 85 ? '#ef4444' : pct >= 50 ? '#fb923c' : '#22c55e';
+    const barColor = !isOnline ? '#ef4444' : pct >= 85 ? '#ef4444' : pct >= 50 ? '#fb923c' : '#22c55e';
 
     return `
-      <div class="parking-popup-content" style="width: 280px;">
-        <div style="background-color: #27272a; padding: 16px; border-bottom: 1px solid rgba(113, 113, 122, 0.3);">
-          <div style="display: flex; justify-content: space-between; align-items: start;">
+      <div style="width:280px;">
+        <div style="background:#27272a;padding:16px;border-bottom:1px solid rgba(113,113,122,.3);">
+          <div style="display:flex;justify-content:space-between;align-items:start;">
             <div>
-              <h3 style="font-weight: bold; color: white; font-size: 16px; margin: 0;">${lot.name}</h3>
-              <p style="font-size: 12px; color: #a1a1aa; margin: 4px 0 0 0;">${lot.location || ''}</p>
+              <h3 style="font-weight:bold;color:white;font-size:16px;margin:0">${lot.name}</h3>
+              <p style="font-size:12px;color:#a1a1aa;margin:4px 0 0">${lot.ip_address || ''}</p>
             </div>
-            <span style="background-color: ${statusBgColors[lot.status]}; border: 1px solid ${statusColors[lot.status]}; color: ${statusColors[lot.status]}; padding: 4px 8px; border-radius: 2px; font-size: 10px; font-weight: bold; white-space: nowrap;">${lot.status_label}</span>
+            <span style="background:${statusColor}22;border:1px solid ${statusColor};color:${statusColor};padding:4px 8px;border-radius:4px;font-size:10px;font-weight:bold;white-space:nowrap">${statusLabel}</span>
           </div>
         </div>
-        <div style="padding: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; margin-bottom: 12px;">
-            <span style="color: #a1a1aa;">Capacity</span>
-            <span style="color: white; font-family: monospace;">${lot.capacity}/${lot.maxCapacity}</span>
+        <div style="padding:16px;">
+          ${isOnline ? `
+          <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:12px;">
+            <span style="color:#a1a1aa">Capacity</span>
+            <span style="color:white;font-family:monospace">${avail ?? '?'}/${total ?? '?'}</span>
           </div>
-          <div style="background-color: rgba(113, 113, 122, 0.3); border-radius: 9999px; overflow: hidden; height: 6px; margin-bottom: 16px;">
-            <div style="height: 100%; width: ${lot.capacityPercent}%; background-color: ${lot.capacityPercent >= 85 ? '#ef4444' : lot.capacityPercent >= 50 ? '#fb923c' : '#22c55e'};"></div>
-          </div>
-          <a href="/camera/${lot.camera_id}" target="_blank" style="width: 100%; background-color: #3b82f6; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#2563eb'" onmouseout="this.style.backgroundColor='#3b82f6'">
-            <span class="material-symbols-outlined" style="font-size: 18px;">videocam</span>
+          <div style="background:rgba(113,113,122,.3);border-radius:999px;overflow:hidden;height:6px;margin-bottom:16px;">
+            <div style="height:100%;width:${pct}%;background:${barColor};transition:width .5s"></div>
+          </div>` : `
+          <p style="color:#ef4444;font-size:13px;margin-bottom:16px;text-align:center">⚠️ กล้องออฟไลน์หรือเชื่อมต่อไม่ได้</p>`}
+          <a href="/camera/${lot.camera_id}" target="_blank"
+            style="width:100%;background:#3b82f6;color:white;padding:12px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:12px;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;"
+            onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
+            <span class="material-symbols-outlined" style="font-size:18px">videocam</span>
             View Live Feed
           </a>
         </div>
-      </div>
-    `;
+      </div>`;
   }
 
-  // Add parking lot markers
-  parkingLots.forEach((lot, index) => {
-    const icon = index === 0 ? parkingIcon : smallParkingIcon;
-    const marker = L.marker([lot.lat, lot.lng], { icon: icon }).addTo(map);
-    marker.bindPopup(createPopupContent(lot), { maxWidth: 300 });
+  // ---- Render initial markers (loading state) ----
+  db_parking_lots.forEach((lot, idx) => {
+    const isLarge = idx === 0;
+    const iconFactory = makeIcon('', isLarge);
 
-    // Add permanent numeric label for available slots
-    marker.bindTooltip(lot.capacity.toString(), {
-      permanent: true,
-      direction: 'top',
+    const marker = L.marker([lot.lat, lot.lng], { icon: iconFactory('loading') }).addTo(map);
+    marker.bindPopup(createPopupContent(lot, true, null), { maxWidth: 300 });
+
+    const tooltip = marker.bindTooltip(capacityLabel(lot.available_slots, lot.total_slots), {
+      permanent: true, direction: 'top',
       className: 'parking-availability-label',
-      offset: index === 0 ? [0, -32] : [0, -12] // Adjust offset based on marker size
-    }).openTooltip();
+      offset: isLarge ? [0, -32] : [0, -22]
+    });
+    tooltip.openTooltip();
+
+    markerMap[lot.camera_id] = { marker, iconFactory, lot, isLarge };
   });
 
-  // Zoom to university function
-  function zoomToUniversity() {
-    map.setView([PSU_LAT, PSU_LNG], 15);
+  // ---- Progressive async sync per camera (max 5s) ----
+  async function syncCamera(camera_id) {
+    const entry = markerMap[camera_id];
+    if (!entry) return;
+    const { marker, iconFactory, lot, isLarge } = entry;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000); // 5s max
+
+    try {
+      const res = await fetch(`/api/map/sync_camera/${camera_id}`, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      if (!res.ok) throw new Error('sync failed');
+      const data = await res.json();
+
+      // Update to online state
+      marker.setIcon(iconFactory('online'));
+      marker.setPopupContent(createPopupContent(lot, true, data));
+      marker.setTooltipContent(capacityLabel(data.available_slots, data.total_slots));
+
+    } catch (err) {
+      clearTimeout(timeout);
+      // Show offline (red) if timed out or error
+      marker.setIcon(iconFactory('offline'));
+      marker.setPopupContent(createPopupContent(lot, false, null));
+      marker.setTooltipContent('✕');
+    }
   }
 
-  // Search functionality (placeholder)
+  // ---- Progressive async sync per camera (max 5s) ----
+  // ยิงตรงไปที่ camera API เลย ไม่ผ่าน Flask server เพื่อหลีกเลี่ยง single-thread bottleneck
+  async function syncCamera(lot) {
+    const entry = markerMap[lot.camera_id];
+    if (!entry) return;
+    const { marker, iconFactory } = entry;
+
+    // ถ้าไม่มี base_url (กล้องไม่มี stream_url) → แดงเลย
+    if (!lot.base_url) {
+      marker.setIcon(iconFactory('offline'));
+      marker.setPopupContent(createPopupContent(lot, false, null));
+      marker.setTooltipContent('✕');
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000); // 5s max
+
+    try {
+      // ยิงตรงไปที่กล้องเลย เช่น http://172.30.81.168:8080/api/parking_areas
+      const res = await fetch(`${lot.base_url}/api/parking_areas`, {
+        signal: controller.signal,
+        mode: 'cors'   // camera C++ server ต้องส่ง CORS header กลับมาด้วย
+      });
+      clearTimeout(timeout);
+
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const raw = await res.json();
+
+      // ข้อมูลกล้องอาจเป็น array หรือ object เดี่ยว
+      const p = Array.isArray(raw) ? raw[0] : raw;
+      const total = p?.total_slots ?? lot.total_slots ?? 0;
+      const avail = p?.available_slots ?? lot.available_slots ?? 0;
+      const occupy = p?.occupied_slots ?? 0;
+      const pct = total > 0 ? Math.round(occupy / total * 100) : 0;
+
+      const freshData = { total_slots: total, available_slots: avail, capacityPercent: pct };
+
+      // อัปเดต marker เป็น online (สีน้ำเงิน)
+      marker.setIcon(iconFactory('online'));
+      marker.setPopupContent(createPopupContent(lot, true, freshData));
+      marker.setTooltipContent(avail.toString());
+
+      // แจ้ง server ให้อัปเดต MongoDB ด้วย (fire-and-forget ไม่ต้องรอ)
+      fetch(`/api/map/sync_camera/${lot.camera_id}`).catch(() => { });
+
+    } catch (err) {
+      clearTimeout(timeout);
+      // Timeout หรือ network error → แดง
+      marker.setIcon(iconFactory('offline'));
+      marker.setPopupContent(createPopupContent(lot, false, null));
+      marker.setTooltipContent('✕');
+    }
+  }
+
+  // ยิง sync ทุกกล้องพร้อมกัน (parallel) เพราะแต่ละตัวยิงตรงไปกล้องเลย ไม่ block กัน
+  db_parking_lots.forEach(lot => syncCamera(lot));
+
+  // ---- Zoom & Search ----
+  function zoomToUniversity() { map.setView([PSU_LAT, PSU_LNG], 15); }
+
   document.getElementById('searchInput').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
-      const query = e.target.value.toLowerCase();
-      const found = parkingLots.find(lot => lot.name.toLowerCase().includes(query));
-      if (found) {
-        map.setView([found.lat, found.lng], 19);
-      }
+      const q = e.target.value.toLowerCase();
+      const found = db_parking_lots.find(l => l.name.toLowerCase().includes(q));
+      if (found) map.setView([found.lat, found.lng], 19);
     }
   });
+
+  // Pulse animation for loading state
+  const style = document.createElement('style');
+  style.textContent = `@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }`;
+  document.head.appendChild(style);
 </script>
 {% endblock body %}

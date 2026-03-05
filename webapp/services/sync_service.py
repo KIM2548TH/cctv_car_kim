@@ -24,26 +24,21 @@ def sync_parking_area_for_camera(cam):
             parking_data = parking_res.json()
             if isinstance(parking_data, dict):
                 parking_data = [parking_data]
-                
+
             for p in parking_data:
-                area = ParkingArea.objects(camera_id=cam.camera_id).first()
-                if not area:
-                    area = ParkingArea(
-                        camera_id=cam.camera_id,
-                        # ใช้ชื่อกล้องจากระบบเรา ไม่ใช่จาก API
-                        # เพราะ C++ ส่ง name ซ้ำกันทุกตัว เช่น "Main Zone A"
-                        name=cam.name or cam.camera_id
-                    )
-                
-                area.total_slots = p.get('total_slots', area.total_slots)
-                area.available_slots = p.get('available_slots', area.available_slots)
-                area.occupied_slots = p.get('occupied_slots', area.occupied_slots)
-                area.violation_slots = p.get('violation_slots', area.violation_slots)
-                area.description = p.get('description', area.description)
-                area.updated_date = datetime.datetime.now()
-                area.save()
-    except requests.RequestException:
-        pass # Handle timeouts or unreachable cameras silently
+                # upsert_one เป็น atomic — ไม่โยน NotUniqueError ไม่ว่ากรณีใดๆ
+                ParkingArea.objects(camera_id=cam.camera_id).update_one(
+                    set__name=cam.name or cam.camera_id,
+                    set__total_slots=p.get('total_slots', 0),
+                    set__available_slots=p.get('available_slots', 0),
+                    set__occupied_slots=p.get('occupied_slots', 0),
+                    set__violation_slots=p.get('violation_slots', 0),
+                    set__description=p.get('description', ''),
+                    set__updated_date=datetime.datetime.now(),
+                    upsert=True
+                )
+    except Exception:
+        pass  # Timeout, network error, or any DB error — silently ignore
 
 
 def sync_anomaly_events_for_camera(cam):
@@ -101,11 +96,14 @@ def sync_anomaly_events_for_camera(cam):
                         media_seek_time_seconds=int(ev.get('media_seek_time_seconds', 0)),
                         is_reviewed=ev.get('is_reviewed', False)
                     )
-                    new_event.save()
-                    new_events_count += 1
-                    
+                    try:
+                        new_event.save()
+                        new_events_count += 1
+                    except Exception:
+                        pass  # Skip if duplicate or DB error
+
             if new_events_count > 0:
                 print(f"[SyncService] Inserted {new_events_count} new anomaly events for {cam.camera_id}.")
-                
-    except requests.RequestException:
-        pass # Handle timeouts or unreachable cameras silently
+
+    except Exception:
+        pass  # Timeout, network error, or any unexpected error
