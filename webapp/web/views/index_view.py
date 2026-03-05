@@ -50,6 +50,11 @@ def anomaly_detail(event_id):
 @login_required
 def log_view():
     import datetime
+    from webapp.services.sync_service import sync_anomaly_events_for_camera
+    
+    # Sync all anomalies for all cameras on demand before fetching
+    for cam in models.Camera.objects():
+        sync_anomaly_events_for_camera(cam)
     
     # Get parameters
     date_str = request.args.get("date", "")
