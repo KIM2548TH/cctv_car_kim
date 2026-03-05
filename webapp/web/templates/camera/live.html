@@ -231,8 +231,8 @@
 
                 <div class="flex flex-col gap-3">
                     {% for event in anomaly_events %}
-                    <div
-                        class="bg-surface rounded-xl border border-red-500/20 overflow-hidden hover:border-red-500/40 transition-colors">
+                    <a href="{{ url_for('index.anomaly_detail', event_id=event.id) }}"
+                        class="block bg-surface rounded-xl border border-red-500/20 overflow-hidden hover:border-red-500/60 hover:shadow-lg hover:shadow-red-900/10 cursor-pointer transition-all">
                         {% if event.media_snapshot_url %}
                         <div class="h-24 w-full bg-black relative">
                             <img src="{{ event.media_snapshot_url }}" alt="Violation Snapshot"
@@ -264,15 +264,13 @@
                                 {% endif %}
                             </div>
 
-                            {% if event.media_video_url %}
-                            <a href="{{ event.media_video_url }}" target="_blank"
-                                class="w-full flex justify-center items-center gap-1.5 py-1.5 mt-2 rounded bg-white/5 hover:bg-white/10 text-slate-300 text-[10px] font-medium transition-colors border border-white/5">
-                                <span class="material-symbols-outlined text-[14px]">play_circle</span>
-                                View Video
-                            </a>
-                            {% endif %}
+                            <div
+                                class="w-full flex justify-center items-center gap-1.5 py-1.5 mt-2 rounded bg-white/5 text-slate-300 text-[10px] font-medium transition-colors border border-white/5">
+                                <span class="material-symbols-outlined text-[14px]">visibility</span>
+                                View Details
+                            </div>
                         </div>
-                    </div>
+                    </a>
                     {% endfor %}
                 </div>
             </div>

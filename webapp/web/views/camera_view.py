@@ -28,8 +28,47 @@ def live_feed(camera_id):
         capacity_percent = int((parking_area.occupied_slots / parking_area.total_slots) * 100)
         
     # Fetch recent anomalies related to this camera
-    anomaly_events = models.AnomalyEvent.objects(camera_id=camera_id).order_by('-timestamp').limit(10)
+    raw_events = models.AnomalyEvent.objects(camera_id=camera_id).order_by('-timestamp').limit(10)
     
+    # แปลง Windows path → HTTP URL
+    from urllib.parse import urlparse
+    base_url = ""
+    if cam and cam.stream_url:
+        parsed = urlparse(cam.stream_url)
+        if parsed.netloc:
+            base_url = f"{parsed.scheme}://{parsed.netloc}"
+
+    def _win_path_to_url(win_path):
+        if not win_path:
+            return ""
+        if win_path.startswith("http://") or win_path.startswith("https://"):
+            return win_path
+        if not base_url:
+            return ""
+        norm = win_path.replace("\\", "/")
+        if len(norm) > 2 and norm[1] == ":":
+            norm = norm[2:].lstrip("/")
+        if norm.lower().startswith("locvideo/"):
+            return f"{base_url}/{norm}"
+        if norm.lower().startswith("smart_parking_violations/"):
+            rest = norm[len("smart_parking_violations/"):]
+            return f"{base_url}/violations/{rest}"
+        return f"{base_url}/{norm}"
+
+    anomaly_events = []
+    for ev in raw_events:
+        anomaly_events.append({
+            "id": str(ev.id),
+            "camera_id": ev.camera_id,
+            "timestamp": ev.timestamp,
+            "event_type": ev.event_type,
+            "confidence": ev.confidence,
+            "is_reviewed": ev.is_reviewed,
+            "media_seek_time_seconds": ev.media_seek_time_seconds,
+            "media_snapshot_url": _win_path_to_url(ev.media_snapshot_url),
+            "media_video_url": _win_path_to_url(ev.media_video_url),
+        })
+
     return render_template(
         "/camera/live.html", 
         camera=cam, 
