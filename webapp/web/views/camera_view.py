@@ -41,10 +41,17 @@ def camera_setting(camera_id):
     if not cam:
         abort(404, description="Camera not found")
         
-    # We use a mock URL if we just want to test iframe embedding without an actual IP.
-    # We will use the IP address if it looks like a valid URL or just mock it.
+    # We use stream_url to find the device's web interface (e.g. removing /video)
     target_url = ""
-    if cam.ip_address:
+    if cam.stream_url:
+        from urllib.parse import urlparse
+        parsed = urlparse(cam.stream_url)
+        target_url = f"{parsed.scheme}://{parsed.netloc}" if parsed.scheme and parsed.netloc else cam.stream_url
+        
+        # Fallback if stream URL did not have a scheme (e.g., just an IP was entered)
+        if not target_url.startswith("http"):
+            target_url = f"http://{target_url}"
+    elif cam.ip_address:
         if cam.ip_address.startswith("http"):
             target_url = cam.ip_address
         else:
