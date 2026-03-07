@@ -8,6 +8,13 @@ module = Blueprint("index", __name__)
 
 
 @module.route("/")
+def landing():
+    """Public landing page before login"""
+    if current_user.is_authenticated:
+        return redirect(url_for('index.index'))
+    return render_template('/index/landing.html')
+
+@module.route("/dashboard")
 @login_required
 def index():
     cameras = models.Camera.objects().order_by("name")

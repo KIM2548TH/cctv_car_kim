@@ -10,12 +10,16 @@
     </div>
 
     <nav class="flex gap-1">
+        {% if current_user.is_authenticated %}
         <a class="px-4 py-1.5 text-xs font-medium {% if request.endpoint == 'index.index' %}text-white bg-white/10 rounded{% else %}text-slate-400 hover:text-white{% endif %} transition-colors"
             href="{{ url_for('index.index') }}">Dashboard</a>
+        {% endif %}
         <a class="px-4 py-1.5 text-xs font-medium {% if request.endpoint == 'map.map_view' %}text-white bg-white/10 rounded{% else %}text-slate-400 hover:text-white{% endif %} transition-colors"
             href="{{ url_for('map.map_view') }}">Map</a>
+        {% if current_user.is_authenticated %}
         <a class="px-4 py-1.5 text-xs font-medium {% if request.endpoint == 'index.log_view' %}text-white bg-white/10 rounded{% else %}text-slate-400 hover:text-white{% endif %} transition-colors"
             href="{{ url_for('index.log_view') }}">Log</a>
+        {% endif %}
     </nav>
 
     <div class="flex items-center gap-3 text-xs text-slate-400">

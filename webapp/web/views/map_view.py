@@ -7,7 +7,6 @@ module = Blueprint("map", __name__)
 
 
 @module.route("/map")
-@login_required
 def map_view():
     """Load map immediately with current MongoDB data. No blocking sync."""
     cameras = models.Camera.objects(latitude__ne=None, longitude__ne=None).order_by("name")
@@ -49,7 +48,6 @@ def map_view():
 
 
 @module.route("/api/map/sync_camera/<camera_id>")
-@login_required
 def sync_camera_api(camera_id):
     """
     ดึงข้อมูลสดจากกล้องเฉพาะตัว แล้วอัปเดต MongoDB และคืน JSON กลับมา
