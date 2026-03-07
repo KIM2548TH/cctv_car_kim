@@ -39,6 +39,7 @@ class ParkingArea(me.Document):
 
     meta = {
         "collection": "parking_areas",
+        "strict": False,
         "indexes": [
             # camera_id เป็น unique key — 1 กล้องมีได้แค่ 1 parking zone
             {"fields": ["camera_id"], "unique": True},
