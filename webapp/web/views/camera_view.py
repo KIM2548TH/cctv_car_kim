@@ -6,7 +6,6 @@ module = Blueprint("camera", __name__)
 
 
 @module.route("/camera/<camera_id>")
-@login_required
 def live_feed(camera_id):
     """Display a dedicated live feed page for a specific camera"""
     from webapp.services.sync_service import sync_parking_area_for_camera, sync_anomaly_events_for_camera

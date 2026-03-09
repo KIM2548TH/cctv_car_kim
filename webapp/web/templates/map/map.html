@@ -87,7 +87,7 @@
   const startLng = urlParams.has('lng') ? parseFloat(urlParams.get('lng')) : PSU_LNG;
   const startZoom = urlParams.has('lat') && urlParams.has('lng') ? 19 : 18;
 
-  let map = L.map('map').setView([startLat, startLng], startZoom);
+  let map = L.map('map', { zoomControl: false }).setView([startLat, startLng], startZoom);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors',
     maxZoom: 21, minZoom: 15
