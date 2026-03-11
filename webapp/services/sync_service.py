@@ -28,27 +28,40 @@ def sync_parking_area_for_camera(cam):
             if not parking_data:
                 return True
                 
-            # Sort descending by created_date to ensure we get the absolute newest state
-            parking_data.sort(key=lambda x: x.get('created_date', ''), reverse=True)
-            p = parking_data[0] # The latest state
+            # Group events by their API camera_id (which is a stream_url) to find the newest for each
+            latest_by_url = {}
+            for p in parking_data:
+                api_cam_url = p.get('camera_id')
+                if not api_cam_url:
+                    continue
+                    
+                curr_date = p.get('created_date', '')
+                if api_cam_url not in latest_by_url or curr_date > latest_by_url[api_cam_url].get('created_date', ''):
+                    latest_by_url[api_cam_url] = p
 
-            ParkingArea.objects(camera_id=cam.camera_id).update_one(
-                set__name=cam.name or p.get('name') or cam.camera_id,
-                set__total_slots=int(p.get('total_slots', 0)),
-                
-                set__total_car_slots=int(p.get('total_car_slots', 0)),
-                set__available_car_slots=int(p.get('available_car_slots', 0)),
-                set__occupied_car_slots=int(p.get('occupied_car_slots', 0)),
-                
-                set__total_motorcycle_slots=int(p.get('total_motorcycle_slots', 0)),
-                set__available_motorcycle_slots=int(p.get('available_motorcycle_slots', 0)),
-                set__occupied_motorcycle_slots=int(p.get('occupied_motorcycle_slots', 0)),
-                
-                set__violation_slots=int(p.get('violation_slots', 0)),
-                set__description=p.get('description', ''),
-                set__updated_date=datetime.datetime.now(),
-                upsert=True
-            )
+            from webapp.models.camera_model import Camera
+
+            # Query the database to find the correct local camera for each stream_url
+            for api_cam_url, p in latest_by_url.items():
+                matched_cam = Camera.objects(stream_url=api_cam_url).first()
+                if matched_cam:
+                    ParkingArea.objects(camera_id=matched_cam.camera_id).update_one(
+                        set__name=matched_cam.name or p.get('name') or matched_cam.camera_id,
+                        set__total_slots=int(p.get('total_slots', 0)),
+                        
+                        set__total_car_slots=int(p.get('total_car_slots', 0)),
+                        set__available_car_slots=int(p.get('available_car_slots', 0)),
+                        set__occupied_car_slots=int(p.get('occupied_car_slots', 0)),
+                        
+                        set__total_motorcycle_slots=int(p.get('total_motorcycle_slots', 0)),
+                        set__available_motorcycle_slots=int(p.get('available_motorcycle_slots', 0)),
+                        set__occupied_motorcycle_slots=int(p.get('occupied_motorcycle_slots', 0)),
+                        
+                        set__violation_slots=int(p.get('violation_slots', 0)),
+                        set__description=p.get('description', ''),
+                        set__updated_date=datetime.datetime.now(),
+                        upsert=True
+                    )
             return True
         return False
     except Exception:
